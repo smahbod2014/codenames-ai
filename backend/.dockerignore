@@ -1,0 +1,9 @@
+# Ignore Git and IDE files
+.git
+.idea
+
+# Ignore the target directory, as it's generated during the Docker build
+target/
+
+# Ignore build logs
+*.log
