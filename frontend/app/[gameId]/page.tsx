@@ -24,7 +24,7 @@ export default function GamePage() {
   useEffect(() => {
     const fetchGame = () => {
       if (gameId) {
-        fetch(`http://localhost:8080/api/game/${gameId}`)
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/${gameId}`)
           .then((response) => {
             if (response.ok) {
               return response.json();
@@ -43,7 +43,7 @@ export default function GamePage() {
   }, [gameId]);
 
   const resetGame = () => {
-    fetch(`http://localhost:8080/api/game/${gameId}/new`, {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/${gameId}/new`, {
       method: "POST",
     })
       .then((response) => response.json())
@@ -55,7 +55,7 @@ export default function GamePage() {
   };
 
   const handleTileClick = (row: number, col: number) => {
-    fetch(`http://localhost:8080/api/game/${gameId}/reveal`, {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/${gameId}/reveal`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
