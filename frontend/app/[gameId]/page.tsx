@@ -29,7 +29,7 @@ export default function GamePage() {
   const gameId = params.gameId as string;
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const fetchGame = () => {
       if (gameId) {
@@ -38,25 +38,34 @@ export default function GamePage() {
             if (response.ok) {
               return response.json();
             }
-            return null;
+            if (response.status === 404) {
+              setGameNotFound(true);
+              if (intervalId) clearInterval(intervalId);
+              return null;
+            }
+            throw new Error(`Server error: ${response.status}`);
           })
           .then((data: Game | null) => {
             if (data) {
               setGame(prevGame => {
-                if (prevGame && data.version > prevGame.version) {
+                // Initial load
+                if (!prevGame) {
+                  return data;
+                }
+                // If the game state is identical, don't re-render
+                if (JSON.stringify(data) === JSON.stringify(prevGame)) {
+                  return prevGame;
+                }
+                // If the game was reset by another player, reset the view
+                if (data.version > prevGame.version) {
                   setIsSpymasterView(false);
                 }
                 return data;
               });
-            } else {
-              setGameNotFound(true);
-              if (intervalId) clearInterval(intervalId);
             }
           })
           .catch((error) => {
             console.error("Error fetching game:", error);
-            setGameNotFound(true);
-            if (intervalId) clearInterval(intervalId);
           });
       }
     };
