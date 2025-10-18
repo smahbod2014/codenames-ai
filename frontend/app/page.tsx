@@ -9,6 +9,7 @@ interface Game {
 export default function HomePage() {
   const router = useRouter();
 
+  // This is a comment
   const createNewGame = () => {
     fetch("http://localhost:8080/api/game/new", {
       method: "POST",
