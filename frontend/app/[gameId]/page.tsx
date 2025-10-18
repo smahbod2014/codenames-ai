@@ -37,20 +37,23 @@ export default function GamePage() {
             return null;
           })
           .then((data: Game | null) => {
-            if (data && game && data.version > game.version) {
-              setIsSpymasterView(false);
-            }
-            setGame(data);
+            setGame(prevGame => {
+              if (data && prevGame && data.version > prevGame.version) {
+                // Game has been reset, force player view
+                setIsSpymasterView(false);
+              }
+              return data;
+            });
           })
           .catch((error) => console.error("Error fetching game:", error));
       }
     };
 
-    fetchGame();
-    const intervalId = setInterval(fetchGame, 2000);
+    fetchGame(); // Initial fetch
+    const intervalId = setInterval(fetchGame, 2000); // Poll every 2 seconds
 
-    return () => clearInterval(intervalId);
-  }, [gameId, game]);
+    return () => clearInterval(intervalId); // Cleanup on unmount
+  }, [gameId]);
 
   const resetGame = () => {
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/${gameId}/new`, {
