@@ -2,6 +2,7 @@ package com.example.demo
 
 import org.springframework.stereotype.Service
 import java.util.UUID
+import kotlin.random.Random
 
 @Service
 class GameService(private val wordService: WordService) {
@@ -9,20 +10,14 @@ class GameService(private val wordService: WordService) {
     private val games = mutableMapOf<String, Game>()
 
     companion object {
-        const val RED_TILES_COUNT = 9
-        const val BLUE_TILES_COUNT = 8
         const val NEUTRAL_TILES_COUNT = 7
+        const val FIRST_TEAM_TILES = 9
+        const val SECOND_TEAM_TILES = 8
     }
 
     fun createNewGame(): Game {
         val gameId = UUID.randomUUID().toString().take(6)
-        val words = wordService.getWords(25)
-        val roles = createRoles()
-        val tiles = words.zip(roles) { word, role -> Tile(word, role) }.shuffled()
-        val board = tiles.chunked(5)
-        val newGame = Game(id = gameId, board = board, turn = Team.RED, version = 1)
-        games[gameId] = newGame
-        return newGame
+        return createGameInstance(gameId, 1)
     }
 
     fun getGame(id: String): Game? {
@@ -31,11 +26,27 @@ class GameService(private val wordService: WordService) {
 
     fun resetGame(id: String): Game? {
         val currentGame = games[id] ?: return null
+        return createGameInstance(id, currentGame.version + 1)
+    }
+
+    private fun createGameInstance(id: String, version: Int): Game {
+        val startingTeam = if (Random.nextBoolean()) Team.RED else Team.BLUE
+        val redCount = if (startingTeam == Team.RED) FIRST_TEAM_TILES else SECOND_TEAM_TILES
+        val blueCount = if (startingTeam == Team.RED) SECOND_TEAM_TILES else FIRST_TEAM_TILES
+
         val words = wordService.getWords(25)
-        val roles = createRoles()
+        val roles = createRoles(redCount, blueCount)
         val tiles = words.zip(roles) { word, role -> Tile(word, role) }.shuffled()
         val board = tiles.chunked(5)
-        val newGame = Game(id = id, board = board, turn = Team.RED, version = currentGame.version + 1)
+
+        val newGame = Game(
+            id = id,
+            board = board,
+            turn = startingTeam,
+            version = version,
+            redTilesRemaining = redCount,
+            blueTilesRemaining = blueCount
+        )
         games[id] = newGame
         return newGame
     }
@@ -50,7 +61,6 @@ class GameService(private val wordService: WordService) {
             val tile = it.board[row][col]
             tile.revealed = true
 
-            // Decrement score
             if (tile.role == Role.RED) {
                 it.redTilesRemaining--
             } else if (tile.role == Role.BLUE) {
@@ -93,10 +103,10 @@ class GameService(private val wordService: WordService) {
         game.board.flatten().forEach { it.revealed = true }
     }
 
-    private fun createRoles(): List<Role> {
+    private fun createRoles(redCount: Int, blueCount: Int): List<Role> {
         val roles = mutableListOf<Role>()
-        repeat(RED_TILES_COUNT) { roles.add(Role.RED) }
-        repeat(BLUE_TILES_COUNT) { roles.add(Role.BLUE) }
+        repeat(redCount) { roles.add(Role.RED) }
+        repeat(blueCount) { roles.add(Role.BLUE) }
         repeat(NEUTRAL_TILES_COUNT) { roles.add(Role.NEUTRAL) }
         roles.add(Role.ASSASSIN)
         return roles.shuffled()
