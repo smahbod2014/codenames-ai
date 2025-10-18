@@ -10,4 +10,4 @@ enum class Team {
 
 data class Tile(val word: String, val role: Role, var revealed: Boolean = false)
 
-data class Game(val board: List<List<Tile>>, var turn: Team)
+data class Game(val id: String, val board: List<List<Tile>>, var turn: Team)
