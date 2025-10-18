@@ -11,7 +11,7 @@ export default function HomePage() {
 
   // This is a comment
   const createNewGame = () => {
-    fetch("http://localhost:8080/api/game/new", {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/new`, {
       method: "POST",
     })
       .then((response) => response.json())
