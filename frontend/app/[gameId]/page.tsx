@@ -13,6 +13,11 @@ interface Game {
   id: string;
   board: Tile[][];
   turn: "RED" | "BLUE";
+  gameOver: boolean;
+  winner: "RED" | "BLUE" | null;
+  version: number;
+  redTilesRemaining: number;
+  blueTilesRemaining: number;
 }
 
 export default function GamePage() {
@@ -31,7 +36,15 @@ export default function GamePage() {
             }
             return null;
           })
-          .then((data: Game | null) => setGame(data))
+          .then((data: Game | null) => {
+            setGame(prevGame => {
+              if (data && prevGame && data.version > prevGame.version) {
+                // Game has been reset, force player view
+                setIsSpymasterView(false);
+              }
+              return data;
+            });
+          })
           .catch((error) => console.error("Error fetching game:", error));
       }
     };
@@ -55,6 +68,8 @@ export default function GamePage() {
   };
 
   const handleTileClick = (row: number, col: number) => {
+    if (game?.gameOver) return;
+
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/${gameId}/reveal`, {
       method: "POST",
       headers: {
@@ -109,30 +124,55 @@ export default function GamePage() {
     return <div>Loading...</div>;
   }
 
+  const turnIndicator = () => {
+    if (game.gameOver) {
+      return (
+        <h2 className={`text-2xl font-bold ${game.winner === 'RED' ? 'text-red-500' : 'text-blue-500'}`}>
+          {game.winner} Team Wins!
+        </h2>
+      );
+    }
+    return (
+      <h2 className={`text-2xl font-bold ${game.turn === 'RED' ? 'text-red-500' : 'text-blue-500'}`}>
+        {game.turn}&apos;s Turn
+      </h2>
+    );
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="flex flex-col items-center">
         <h1 className="text-4xl font-bold mb-8">Codenames</h1>
         <button
           onClick={resetGame}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-8"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
         >
           New Game
         </button>
-        <div className="grid grid-cols-5 gap-4">
-          {game.board.map((row, rowIndex) =>
-            row.map((tile, colIndex) => (
-              <div
-                key={`${rowIndex}-${colIndex}`}
-                onClick={() => !isSpymasterView && handleTileClick(rowIndex, colIndex)}
-                className={`w-40 h-28 rounded-md flex items-center justify-center text-center p-2 uppercase text-lg font-bold ${isSpymasterView ? 'cursor-not-allowed' : 'cursor-pointer'} ${getTileStyling(
-                  tile
-                )}`}
-              >
-                {tile.word}
-              </div>
-            ))
-          )}
+        <div className="mb-4">
+          {turnIndicator()}
+        </div>
+        <div className="w-full max-w-4xl relative">
+          <div className="absolute -top-8 left-0">
+            <p className="text-2xl font-bold">
+              <span className="text-red-500">{game.redTilesRemaining}</span> - <span className="text-blue-500">{game.blueTilesRemaining}</span>
+            </p>
+          </div>
+          <div className="grid grid-cols-5 gap-4">
+            {game.board.map((row, rowIndex) =>
+              row.map((tile, colIndex) => (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  onClick={() => !isSpymasterView && handleTileClick(rowIndex, colIndex)}
+                  className={`w-40 h-28 rounded-md flex items-center justify-center text-center p-2 uppercase text-lg font-bold ${isSpymasterView || game.gameOver ? 'cursor-not-allowed' : 'cursor-pointer'} ${getTileStyling(
+                    tile
+                  )}`}
+                >
+                  {tile.word}
+                </div>
+              ))
+            )}
+          </div>
         </div>
         <div className="mt-8 flex gap-4">
           <button
