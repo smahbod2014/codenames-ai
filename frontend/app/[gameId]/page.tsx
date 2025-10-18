@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 interface Tile {
   word: string;
@@ -23,10 +23,14 @@ interface Game {
 export default function GamePage() {
   const [game, setGame] = useState<Game | null>(null);
   const [isSpymasterView, setIsSpymasterView] = useState(false);
+  const [gameNotFound, setGameNotFound] = useState(false);
   const params = useParams();
+  const router = useRouter();
   const gameId = params.gameId as string;
 
   useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
     const fetchGame = () => {
       if (gameId) {
         fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/${gameId}`)
@@ -37,23 +41,44 @@ export default function GamePage() {
             return null;
           })
           .then((data: Game | null) => {
-            setGame(prevGame => {
-              if (data && prevGame && data.version > prevGame.version) {
-                // Game has been reset, force player view
-                setIsSpymasterView(false);
-              }
-              return data;
-            });
+            if (data) {
+              setGame(prevGame => {
+                if (prevGame && data.version > prevGame.version) {
+                  setIsSpymasterView(false);
+                }
+                return data;
+              });
+            } else {
+              setGameNotFound(true);
+              if (intervalId) clearInterval(intervalId);
+            }
           })
-          .catch((error) => console.error("Error fetching game:", error));
+          .catch((error) => {
+            console.error("Error fetching game:", error);
+            setGameNotFound(true);
+            if (intervalId) clearInterval(intervalId);
+          });
       }
     };
 
-    fetchGame(); // Initial fetch
-    const intervalId = setInterval(fetchGame, 2000); // Poll every 2 seconds
+    fetchGame();
+    intervalId = setInterval(fetchGame, 2000);
 
-    return () => clearInterval(intervalId); // Cleanup on unmount
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [gameId]);
+
+  const createNewGameAndRedirect = () => {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/new`, {
+      method: "POST",
+    })
+      .then((response) => response.json())
+      .then((data: { id: string }) => {
+        router.push(`/${data.id}`);
+      })
+      .catch((error) => console.error("Error creating new game:", error));
+  };
 
   const resetGame = () => {
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/game/${gameId}/new`, {
@@ -119,6 +144,21 @@ export default function GamePage() {
     }
     return `bg-gray-200 ${textColor}`;
   };
+
+  if (gameNotFound) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+        <h1 className="text-4xl font-bold mb-8">Game Not Found</h1>
+        <p className="mb-8">The game ID in the URL does not exist.</p>
+        <button
+          onClick={createNewGameAndRedirect}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Create a New Game
+        </button>
+      </main>
+    );
+  }
 
   if (!game) {
     return <div>Loading...</div>;
