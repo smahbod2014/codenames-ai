@@ -20,6 +20,35 @@ interface Game {
   blueTilesRemaining: number;
 }
 
+// Helper function for efficient game state comparison
+const areGamesEqual = (gameA: Game, gameB: Game): boolean => {
+  if (!gameA || !gameB) return false;
+
+  // First, check all the primitive fields that can change
+  if (
+    gameA.version !== gameB.version ||
+    gameA.turn !== gameB.turn ||
+    gameA.gameOver !== gameB.gameOver ||
+    gameA.winner !== gameB.winner ||
+    gameA.redTilesRemaining !== gameB.redTilesRemaining ||
+    gameA.blueTilesRemaining !== gameB.blueTilesRemaining
+  ) {
+    return false;
+  }
+
+  // Then, check the revealed status of each tile, which is the most expensive check
+  for (let i = 0; i < gameA.board.length; i++) {
+    for (let j = 0; j < gameA.board[i].length; j++) {
+      if (gameA.board[i][j].revealed !== gameB.board[i][j].revealed) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
+
 export default function GamePage() {
   const [game, setGame] = useState<Game | null>(null);
   const [isSpymasterView, setIsSpymasterView] = useState(false);
@@ -29,7 +58,7 @@ export default function GamePage() {
   const gameId = params.gameId as string;
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const fetchGame = () => {
       if (gameId) {
@@ -38,25 +67,31 @@ export default function GamePage() {
             if (response.ok) {
               return response.json();
             }
-            return null;
+            if (response.status === 404) {
+              setGameNotFound(true);
+              if (intervalId) clearInterval(intervalId);
+              return null;
+            }
+            throw new Error(`Server error: ${response.status}`);
           })
           .then((data: Game | null) => {
             if (data) {
               setGame(prevGame => {
-                if (prevGame && data.version > prevGame.version) {
-                  setIsSpymasterView(false);
+                if (!prevGame) {
+                  return data; // Initial load
+                }
+                if (areGamesEqual(prevGame, data)) {
+                  return prevGame; // No change, prevent re-render
+                }
+                if (data.version > prevGame.version) {
+                  setIsSpymasterView(false); // Game was reset
                 }
                 return data;
               });
-            } else {
-              setGameNotFound(true);
-              if (intervalId) clearInterval(intervalId);
             }
           })
           .catch((error) => {
             console.error("Error fetching game:", error);
-            setGameNotFound(true);
-            if (intervalId) clearInterval(intervalId);
           });
       }
     };
