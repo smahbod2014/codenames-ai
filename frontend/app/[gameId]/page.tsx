@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Tile {
   word: string;
@@ -24,7 +25,6 @@ interface Game {
 const areGamesEqual = (gameA: Game, gameB: Game): boolean => {
   if (!gameA || !gameB) return false;
 
-  // First, check all the primitive fields that can change
   if (
     gameA.version !== gameB.version ||
     gameA.turn !== gameB.turn ||
@@ -36,7 +36,6 @@ const areGamesEqual = (gameA: Game, gameB: Game): boolean => {
     return false;
   }
 
-  // Then, check the revealed status of each tile, which is the most expensive check
   for (let i = 0; i < gameA.board.length; i++) {
     for (let j = 0; j < gameA.board[i].length; j++) {
       if (gameA.board[i][j].revealed !== gameB.board[i][j].revealed) {
@@ -217,7 +216,9 @@ export default function GamePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="flex flex-col items-center">
-        <h1 className="text-4xl font-bold mb-8">Codenames</h1>
+        <Link href="/">
+          <h1 className="text-4xl font-bold mb-8 cursor-pointer">Codenames</h1>
+        </Link>
         <button
           onClick={resetGame}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"

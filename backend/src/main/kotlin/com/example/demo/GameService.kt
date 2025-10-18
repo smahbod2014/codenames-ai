@@ -15,9 +15,9 @@ class GameService(private val wordService: WordService) {
         const val SECOND_TEAM_TILES = 8
     }
 
-    fun createNewGame(): Game {
+    fun createNewGame(customWords: List<String>): Game {
         val gameId = UUID.randomUUID().toString().take(6)
-        return createGameInstance(gameId, 1)
+        return createGameInstance(gameId, 1, customWords)
     }
 
     fun getGame(id: String): Game? {
@@ -26,17 +26,20 @@ class GameService(private val wordService: WordService) {
 
     fun resetGame(id: String): Game? {
         val currentGame = games[id] ?: return null
-        return createGameInstance(id, currentGame.version + 1)
+        // Carry over the custom words from the existing game
+        return createGameInstance(id, currentGame.version + 1, currentGame.customWords)
     }
 
-    private fun createGameInstance(id: String, version: Int): Game {
+    private fun createGameInstance(id: String, version: Int, customWords: List<String>): Game {
         val startingTeam = if (Random.nextBoolean()) Team.RED else Team.BLUE
         val redCount = if (startingTeam == Team.RED) FIRST_TEAM_TILES else SECOND_TEAM_TILES
         val blueCount = if (startingTeam == Team.RED) SECOND_TEAM_TILES else FIRST_TEAM_TILES
 
-        val words = wordService.getWords(25)
+        val allWords = (wordService.getBaseWords() + customWords).distinct()
+        val gameWords = allWords.shuffled().take(25)
+
         val roles = createRoles(redCount, blueCount)
-        val tiles = words.zip(roles) { word, role -> Tile(word, role) }.shuffled()
+        val tiles = gameWords.zip(roles) { word, role -> Tile(word, role) }.shuffled()
         val board = tiles.chunked(5)
 
         val newGame = Game(
@@ -45,7 +48,8 @@ class GameService(private val wordService: WordService) {
             turn = startingTeam,
             version = version,
             redTilesRemaining = redCount,
-            blueTilesRemaining = blueCount
+            blueTilesRemaining = blueCount,
+            customWords = customWords
         )
         games[id] = newGame
         return newGame
