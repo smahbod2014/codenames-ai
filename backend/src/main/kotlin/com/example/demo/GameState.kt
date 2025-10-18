@@ -17,6 +17,6 @@ data class Game(
     var gameOver: Boolean = false,
     var winner: Team? = null,
     val version: Int = 1,
-    var redTilesRemaining: Int = 9,
-    var blueTilesRemaining: Int = 8
+    var redTilesRemaining: Int,
+    var blueTilesRemaining: Int
 )
