@@ -131,7 +131,7 @@ export default function GamePage() {
     }
     return (
       <h2 className={`text-2xl font-bold ${game.turn === 'RED' ? 'text-red-500' : 'text-blue-500'}`}>
-        {game.turn}'s Turn
+        {game.turn}&apos;s Turn
       </h2>
     );
   };
