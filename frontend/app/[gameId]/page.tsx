@@ -20,6 +20,35 @@ interface Game {
   blueTilesRemaining: number;
 }
 
+// Helper function for efficient game state comparison
+const areGamesEqual = (gameA: Game, gameB: Game): boolean => {
+  if (!gameA || !gameB) return false;
+
+  // First, check all the primitive fields that can change
+  if (
+    gameA.version !== gameB.version ||
+    gameA.turn !== gameB.turn ||
+    gameA.gameOver !== gameB.gameOver ||
+    gameA.winner !== gameB.winner ||
+    gameA.redTilesRemaining !== gameB.redTilesRemaining ||
+    gameA.blueTilesRemaining !== gameB.blueTilesRemaining
+  ) {
+    return false;
+  }
+
+  // Then, check the revealed status of each tile, which is the most expensive check
+  for (let i = 0; i < gameA.board.length; i++) {
+    for (let j = 0; j < gameA.board[i].length; j++) {
+      if (gameA.board[i][j].revealed !== gameB.board[i][j].revealed) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
+
 export default function GamePage() {
   const [game, setGame] = useState<Game | null>(null);
   const [isSpymasterView, setIsSpymasterView] = useState(false);
@@ -48,17 +77,14 @@ export default function GamePage() {
           .then((data: Game | null) => {
             if (data) {
               setGame(prevGame => {
-                // Initial load
                 if (!prevGame) {
-                  return data;
+                  return data; // Initial load
                 }
-                // If the game state is identical, don't re-render
-                if (JSON.stringify(data) === JSON.stringify(prevGame)) {
-                  return prevGame;
+                if (areGamesEqual(prevGame, data)) {
+                  return prevGame; // No change, prevent re-render
                 }
-                // If the game was reset by another player, reset the view
                 if (data.version > prevGame.version) {
-                  setIsSpymasterView(false);
+                  setIsSpymasterView(false); // Game was reset
                 }
                 return data;
               });
