@@ -126,6 +126,10 @@ export default function GamePage() {
       .catch((error) => console.error("Error resetting game:", error));
   };
 
+  const handleGoHome = () => {
+    router.push("/");
+  };
+
   const handleTileClick = (row: number, col: number) => {
     if (game?.gameOver) return;
 
@@ -185,10 +189,10 @@ export default function GamePage() {
         <h1 className="text-4xl font-bold mb-8">Game Not Found</h1>
         <p className="mb-8">The game ID in the URL does not exist.</p>
         <button
-          onClick={createNewGameAndRedirect}
+          onClick={handleGoHome}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          Create a New Game
+          Back to Home
         </button>
       </main>
     );
