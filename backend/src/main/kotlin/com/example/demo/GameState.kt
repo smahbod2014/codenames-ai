@@ -19,5 +19,7 @@ data class Game(
     val version: Int = 1,
     var redTilesRemaining: Int,
     var blueTilesRemaining: Int,
-    val customWords: List<String> = emptyList()
+    val customWords: List<String> = emptyList(),
+    var redWins: Int = 0,
+    var blueWins: Int = 0
 )

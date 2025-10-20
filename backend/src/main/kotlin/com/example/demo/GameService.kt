@@ -27,10 +27,10 @@ class GameService(private val wordService: WordService) {
 
     fun resetGame(id: String): Game? {
         val currentGame = games[id] ?: return null
-        return createGameInstance(id, currentGame.version + 1, currentGame.customWords)
+        return createGameInstance(id, currentGame.version + 1, currentGame.customWords, currentGame.redWins, currentGame.blueWins)
     }
 
-    private fun createGameInstance(id: String, version: Int, customWords: List<String>): Game {
+    private fun createGameInstance(id: String, version: Int, customWords: List<String>, redWins: Int = 0, blueWins: Int = 0): Game {
         val startingTeam = if (Random.nextBoolean()) Team.RED else Team.BLUE
         val redCount = if (startingTeam == Team.RED) FIRST_TEAM_TILES else SECOND_TEAM_TILES
         val blueCount = if (startingTeam == Team.RED) SECOND_TEAM_TILES else FIRST_TEAM_TILES
@@ -57,7 +57,9 @@ class GameService(private val wordService: WordService) {
             version = version,
             redTilesRemaining = redCount,
             blueTilesRemaining = blueCount,
-            customWords = customWords
+            customWords = customWords,
+            redWins = redWins,
+            blueWins = blueWins
         )
         games[id] = newGame
         return newGame
@@ -82,6 +84,7 @@ class GameService(private val wordService: WordService) {
             if (tile.role == Role.ASSASSIN) {
                 it.gameOver = true
                 it.winner = if (it.turn == Team.RED) Team.BLUE else Team.RED
+                if (it.winner == Team.RED) it.redWins++ else it.blueWins++
                 revealAllTiles(it)
                 return it
             }
@@ -105,9 +108,11 @@ class GameService(private val wordService: WordService) {
         if (game.redTilesRemaining == 0) {
             game.gameOver = true
             game.winner = Team.RED
+            game.redWins++
         } else if (game.blueTilesRemaining == 0) {
             game.gameOver = true
             game.winner = Team.BLUE
+            game.blueWins++
         }
     }
 
