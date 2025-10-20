@@ -13,6 +13,7 @@ class GameService(private val wordService: WordService) {
         const val NEUTRAL_TILES_COUNT = 7
         const val FIRST_TEAM_TILES = 9
         const val SECOND_TEAM_TILES = 8
+        const val BOARD_SIZE = 25
     }
 
     fun createNewGame(customWords: List<String>): Game {
@@ -26,7 +27,6 @@ class GameService(private val wordService: WordService) {
 
     fun resetGame(id: String): Game? {
         val currentGame = games[id] ?: return null
-        // Carry over the custom words from the existing game
         return createGameInstance(id, currentGame.version + 1, currentGame.customWords)
     }
 
@@ -35,8 +35,16 @@ class GameService(private val wordService: WordService) {
         val redCount = if (startingTeam == Team.RED) FIRST_TEAM_TILES else SECOND_TEAM_TILES
         val blueCount = if (startingTeam == Team.RED) SECOND_TEAM_TILES else FIRST_TEAM_TILES
 
-        val allWords = (wordService.getBaseWords() + customWords).distinct()
-        val gameWords = allWords.shuffled().take(25)
+        // Combine word sources and ensure uniqueness
+        val combinedWords = (wordService.getBaseWords() + customWords).distinct().toMutableList()
+
+        // If not enough words, supplement with the fallback list
+        if (combinedWords.size < BOARD_SIZE) {
+            combinedWords.addAll(wordService.getFallbackWords())
+        }
+
+        // Ensure final list is unique and shuffled, then take the required number of words
+        val gameWords = combinedWords.distinct().shuffled().take(BOARD_SIZE)
 
         val roles = createRoles(redCount, blueCount)
         val tiles = gameWords.zip(roles) { word, role -> Tile(word, role) }.shuffled()

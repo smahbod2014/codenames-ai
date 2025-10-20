@@ -10,16 +10,27 @@ import java.io.InputStreamReader
 class WordService {
 
     private val baseWords: MutableList<String> = mutableListOf()
+    private val fallbackWords = listOf(
+        "Apple", "Banana", "Carrot", "Dog", "Elephant", "Flower", "Guitar", "House", "Ice Cream", "Jungle",
+        "Kite", "Lemon", "Mountain", "Notebook", "Ocean", "Piano", "Queen", "Rainbow", "Sun", "Tree",
+        "Umbrella", "Violin", "Watermelon", "Xylophone", "Yacht", "Zebra", "Ant", "Bird", "Cat", "Duck"
+    )
 
     @PostConstruct
     fun init() {
-        val resource = ClassPathResource("wordlist.txt")
-        BufferedReader(InputStreamReader(resource.inputStream)).useLines { lines ->
-            lines.forEach { line ->
-                if (line.isNotBlank()) {
-                    baseWords.add(line.trim())
+        try {
+            val resource = ClassPathResource("wordlist.txt")
+            BufferedReader(InputStreamReader(resource.inputStream)).useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isNotBlank()) {
+                        baseWords.add(line.trim())
+                    }
                 }
             }
+        } catch (e: Exception) {
+            println("wordlist.txt not found or unreadable, using fallback words.")
+            // If the file can't be read, the baseWords list will be empty,
+            // and the logic in GameService will rely on the fallback.
         }
     }
 
@@ -27,10 +38,7 @@ class WordService {
         return baseWords
     }
 
-    fun getWords(count: Int): List<String> {
-        if (baseWords.size < count) {
-            return baseWords.shuffled()
-        }
-        return baseWords.shuffled().take(count)
+    fun getFallbackWords(): List<String> {
+        return fallbackWords
     }
 }
