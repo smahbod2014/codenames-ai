@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Tile {
   word: string;
@@ -18,13 +19,14 @@ interface Game {
   version: number;
   redTilesRemaining: number;
   blueTilesRemaining: number;
+  redWins: number;
+  blueWins: number;
 }
 
 // Helper function for efficient game state comparison
 const areGamesEqual = (gameA: Game, gameB: Game): boolean => {
   if (!gameA || !gameB) return false;
 
-  // First, check all the primitive fields that can change
   if (
     gameA.version !== gameB.version ||
     gameA.turn !== gameB.turn ||
@@ -36,7 +38,6 @@ const areGamesEqual = (gameA: Game, gameB: Game): boolean => {
     return false;
   }
 
-  // Then, check the revealed status of each tile, which is the most expensive check
   for (let i = 0; i < gameA.board.length; i++) {
     for (let j = 0; j < gameA.board[i].length; j++) {
       if (gameA.board[i][j].revealed !== gameB.board[i][j].revealed) {
@@ -127,6 +128,10 @@ export default function GamePage() {
       .catch((error) => console.error("Error resetting game:", error));
   };
 
+  const handleGoHome = () => {
+    router.push("/");
+  };
+
   const handleTileClick = (row: number, col: number) => {
     if (game?.gameOver) return;
 
@@ -150,7 +155,7 @@ export default function GamePage() {
         case "BLUE":
           return "bg-blue-500 text-white";
         case "NEUTRAL":
-          return "bg-yellow-200 text-white";
+          return "bg-amber-200 text-black";
         case "ASSASSIN":
           return "bg-black text-white";
         default:
@@ -168,7 +173,7 @@ export default function GamePage() {
           textColor = "text-blue-500";
           break;
         case "NEUTRAL":
-          textColor = "text-yellow-600";
+          textColor = "text-amber-600";
           break;
         case "ASSASSIN":
           textColor = "text-black";
@@ -185,12 +190,20 @@ export default function GamePage() {
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <h1 className="text-4xl font-bold mb-8">Game Not Found</h1>
         <p className="mb-8">The game ID in the URL does not exist.</p>
-        <button
-          onClick={createNewGameAndRedirect}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Create a New Game
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={createNewGameAndRedirect}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Create a New Game
+          </button>
+          <button
+            onClick={handleGoHome}
+            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Go to Home
+          </button>
+        </div>
       </main>
     );
   }
@@ -217,7 +230,9 @@ export default function GamePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="flex flex-col items-center">
-        <h1 className="text-4xl font-bold mb-8">Codenames</h1>
+        <Link href="/">
+          <h1 className="text-4xl font-bold mb-8 cursor-pointer">Codenames</h1>
+        </Link>
         <button
           onClick={resetGame}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
@@ -247,6 +262,11 @@ export default function GamePage() {
                 </div>
               ))
             )}
+          </div>
+          <div className="absolute -bottom-8 right-0">
+            <p className="text-2xl font-bold">
+              <span className="text-red-500">Red: {game.redWins}</span> - <span className="text-blue-500">Blue: {game.blueWins}</span>
+            </p>
           </div>
         </div>
         <div className="mt-8 flex gap-4">
