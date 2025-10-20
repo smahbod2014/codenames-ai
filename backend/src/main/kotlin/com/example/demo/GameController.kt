@@ -13,8 +13,8 @@ class GameController(private val gameService: GameService) {
 
     
     @PostMapping("/api/game/new")
-    fun newGame(): Game {
-        return gameService.createNewGame()
+    fun newGame(@RequestBody(required = false) request: NewGameRequest?): Game {
+        return gameService.createNewGame(request?.customWords ?: emptyList())
     }
 
     
